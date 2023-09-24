@@ -30,16 +30,11 @@
                     <i class="bi bi-cart3"></i> Compras
                 </a>
 
-                <form class="d-flex" role="search">
-                    <div class="input-group">
-                        <input type="text" v-model="filtro" class="form-control" placeholder="Pesquisar">
-                        <span class="input-group-text" @click="filtrarProduto"><i class="bi bi-search"></i></span>
-                    </div>
-                </form>
+                <input type="text" v-model="filtro" @keyup="filtrarProduto" class="form-control" placeholder="Pesquisar...">
             </div>
         </nav>
 
-        <div style="margin-top: 4em !important;">
+        <div style="margin-top: 7em !important; margin-bottom: 4em !important;">
             <ul class="nav nav-pills justify-content-center">
                 <li class="nav-item"
                     v-for="(supermercado, indice) in supermercados">
@@ -77,7 +72,9 @@
                         >
                             <div class="d-flex w-100 justify-content-between">
                             <h6 class="mb-1">{{ produto.produto }}</h6>
-                            <small>3 days ago</small>
+                            <small>
+                                <i class="bi bi-pencil-fill"></i>
+                            </small>
                             </div>
                             <small>R$ {{ produto.preco }}</small>
                         </a>
@@ -93,20 +90,65 @@
         <div class="text-center fixed-bottom bg-primary">
             <div class="row">
                 <a href="index.html" 
-                    class="col-4 text-white menu-bottom p-3 bg-dark"
+                    class="col-4 text-white menu-bottom p-1 bg-dark" style="text-decoration: none;"
                 >
                     <i class="bi bi-cart3 "></i>
+                    <div style="font-size: 12px !important; font-weight: bold;">Supermercado</div>
                 </a>
-                <a href="novo-produto.html" 
-                    class="col-4 text-white menu-bottom p-3"
+                <a href="#" 
+                    class="col-4 text-white menu-bottom p-1" 
+                    style="text-decoration: none"
+                    data-bs-toggle="modal" data-bs-target="#exampleModal"
                 >
                     <i class="bi bi-bag-plus-fill"></i>
+                    <div style="font-size: 12px !important; font-weight: bold;">Novo produto</div>
                 </a>
                 <a href="checklist.html" 
-                    class="col-4 text-white menu-bottom p-3"
+                    class="col-4 text-white menu-bottom p-1"  style="text-decoration: none;"
                 >
                     <i class="bi bi-check2-square"></i>
+                    <div style="font-size: 12px !important; font-weight: bold;">Checklist</div>
                 </a>
+            </div>
+        </div>
+
+        <!-- Modal -->
+        <div class="modal fade" id="exampleModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h1 class="modal-title fs-5" id="exampleModalLabel">Novo produto</h1>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <form @submit.prevent="salvarDados">
+                        <div class="modal-body">
+                            <div class="mb-3">
+                                <label for="supermercado" class="form-label">Supermercado:</label>
+                                <select class="form-select" v-model="form.supermercado" name="supermercado" required>
+                                    <option value="" disabled selected>SELECIONE...</option>
+                                    <option value="Líder">Líder</option>
+                                    <option value="Mais Barato">Mais Barato</option>
+                                    <option value="Matheus">Matheus</option>
+                                    <option value="Preço Baixo">Preço Baixo</option>
+                                </select>
+                            </div>
+                            <div class="mb-3">
+                                <label for="produto" class="form-label">Produto:</label>
+                                <input type="text" class="form-control" v-model="form.produto" name="produto" required>
+                            </div>
+                            <div class="col-6 mb-3">
+                                <label for="preco" class="form-label">Preço:</label>
+                                <input type="text" class="form-control" v-model="form.preco" name="preco" placeholder="R$ 0.00" required>
+                            </div>
+        
+                            <div class="alert alert-success"><i class="bi bi-check-circle-fill"></i> Produto adicionado.</div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="submit" class="btn btn-primary">Adicionar</button>
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        </div>
+                    </form>
+                </div>
             </div>
         </div>
     </div>
@@ -120,13 +162,34 @@
                 supermercadoAtual: '',
                 supermercados: [],
                 filtro: '',
-                localStorageData: []
+                localStorageData: [],
+                form: {
+                    supermercado: '',
+                    produto: '',
+                    preco: ''
+                }
             },
 
             mounted() {
                 this.carregarProdutos();
             },
             methods: {
+                salvarDados() {
+                    const dados = JSON.parse(localStorage.getItem('produtosStore')) || {};
+
+                    if (!dados[this.form.supermercado]) {
+                        dados[this.form.supermercado] = [];
+                    }
+
+                    dados[this.form.supermercado].push({
+                        produto: this.form.produto,
+                        preco: this.form.preco
+                    });
+                    
+
+                    localStorage.setItem('produtosStore', JSON.stringify(dados));
+                },
+                
                 carregarProdutos(supermercado = null) {
                     
                     const produtos = JSON.parse(localStorage.getItem('produtosStore'));
@@ -149,15 +212,17 @@
                     if(!this.filtro) {
                         this.carregarProdutos(this.supermercadoAtual);
                     }else {
-                        let produtos = [];
+                        let produtosFiltrados = [];
+
+                        const produtos = JSON.parse(localStorage.getItem('produtosStore'));
                         
-                        this.localStorageData.forEach((item) => {
+                        produtos[this.supermercadoAtual].forEach((item) => {
                             if(item.produto.includes(this.filtro)) {
-                                produtos.push(item);
+                                produtosFiltrados.push(item);
                             }
                         });
 
-                        this.localStorageData = produtos;
+                        this.localStorageData = produtosFiltrados;
                     }
                 }
 
